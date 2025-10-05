@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisper Web Transcription</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        #progressBar {
+            width: 100%;
+            height: 20px;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        #progressBar div {
+            height: 100%;
+            width: 0%;
+            background-color: #4caf50;
+        }
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
+        button {
+            padding: 6px 12px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+    </style>
+    {% if has_key %}
+    <script>
+        // Pass to client that an API key is already stored
+        window.hasApiKey = true;
+    </script>
+    {% else %}
+    <script>
+        window.hasApiKey = false;
+    </script>
+    {% endif %}
+</head>
+<body>
+    <div class="container">
+        <h2>Whisper Web Transcription</h2>
+        <!-- API key input section -->
+        <div id="apiKeySection">
+            <label for="apiKeyInput">Enter OpenAI API Key:</label><br>
+            <input type="password" id="apiKeyInput" placeholder="sk-..." style="width: 100%; margin-top: 5px;">
+            <button id="saveKeyBtn" style="margin-top: 5px;">Save API Key</button>
+        </div>
+        <!-- Upload and transcribe section -->
+        <div id="uploadSection" class="hidden">
+            <label for="audioInput">Select audio file:</label><br>
+            <input type="file" id="audioInput" accept="audio/*" style="margin-top: 5px;"><br>
+            <label for="languageInput" style="margin-top: 10px; display:block;">Language (optional):</label>
+            <input type="text" id="languageInput" placeholder="e.g. en, de, fr" style="width: 100%; margin-top: 5px;"><br>
+
+            <!-- Prompt input: ask the user for context or expected vocabulary.  This
+                 text is passed to the API to help correct acronyms, names,
+                 preserve context across chunks, and control style as suggested
+                 by OpenAI's prompting guidelines【68619459314222†screenshot】. -->
+            <label for="promptInput" style="margin-top: 10px; display:block;">Optional context / prompt:</label>
+            <textarea id="promptInput" rows="3" placeholder="Describe the audio, list acronyms, names, or topics…" style="margin-top: 5px;"></textarea><br>
+
+            <button id="transcribeBtn" style="margin-top: 10px;">Transcribe</button>
+            <div id="progressBar" class="hidden"><div></div></div>
+            <p id="status" style="margin-top: 5px;"></p>
+            <textarea id="transcriptOutput" rows="12" placeholder="Transcribed text will appear here..." readonly style="margin-top: 10px;"></textarea><br>
+            <button id="downloadBtn" class="hidden" style="margin-top: 5px;">Download Transcript</button>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

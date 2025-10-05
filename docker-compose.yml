@@ -1,0 +1,23 @@
+
+
+services:
+  whisper-web-app:
+    build: .
+    # Map the container’s port 5500 (default defined in app.py) to a high
+    # port on the host. Feel free to change the host port if 5500 is
+    # already in use on your machine.
+    ports:
+      - "5500:5500"
+    # Persist data (including your API key) in a named volume.  The
+    # OPENAI_KEY_PATH environment variable points the application to
+    # /data/.openai_api_key so keys stored here will survive container restarts.
+    volumes:
+      - whisper_data:/data
+    environment:
+      - OPENAI_KEY_PATH=/data/.openai_api_key
+      - PORT=5500
+    # Automatically restart the container unless it is explicitly stopped
+    restart: unless-stopped
+
+volumes:
+  whisper_data:
