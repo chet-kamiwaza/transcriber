@@ -1,9 +1,9 @@
-// Client‑side logic for the Whisper web transcription app.
+// Client-side logic for the Whisper web transcription app.
 //
 // This script manages saving the API key, uploading an audio file, displaying
 // progress during the upload/transcription process, and rendering the resulting
 // transcript. It uses XMLHttpRequest instead of the Fetch API to provide
-// fine‑grained upload progress events.
+// fine-grained upload progress events.
 
 document.addEventListener('DOMContentLoaded', function () {
     const apiKeySection = document.getElementById('apiKeySection');

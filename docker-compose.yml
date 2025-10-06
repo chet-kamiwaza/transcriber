@@ -1,9 +1,7 @@
-
-
 services:
   whisper-web-app:
     build: .
-    # Map the container’s port 5500 (default defined in app.py) to a high
+    # Map the container's port 5500 (default defined in app.py) to a high
     # port on the host. Feel free to change the host port if 5500 is
     # already in use on your machine.
     ports:

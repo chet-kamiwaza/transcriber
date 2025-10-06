@@ -3,44 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whisper Web Transcription</title>
+    <title>Whisper Web Transcription - Enhanced</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             margin: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
         }
         .hidden {
             display: none;
         }
         #progressBar {
             width: 100%;
-            height: 20px;
+            height: 25px;
             background-color: #f3f3f3;
-            border: 1px solid #ccc;
+            border-radius: 12px;
+            overflow: hidden;
             margin-top: 10px;
         }
         #progressBar div {
             height: 100%;
             width: 0%;
-            background-color: #4caf50;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
         }
         textarea {
             width: 100%;
             resize: vertical;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+        input[type="text"], input[type="password"], input[type="file"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
         }
         button {
-            padding: 6px 12px;
-            margin-top: 5px;
+            padding: 10px 20px;
+            margin-top: 10px;
             cursor: pointer;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .speaker-section {
+            background: #f8f9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #e3e6ff;
+        }
+        .speaker-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .speaker-header input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        .speaker-settings {
+            margin-top: 15px;
+            padding-left: 25px;
+        }
+        .speaker-settings label {
+            display: block;
+            margin-top: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #444;
+        }
+        .status-processing {
+            color: #667eea;
+            font-weight: bold;
+        }
+        .status-complete {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        #transcriptOutput {
+            background: #f9fafb;
+            min-height: 200px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .speaker-label {
+            color: #667eea;
+            font-weight: bold;
+        }
+        .advanced-options {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e5e5;
+        }
+        .option-group {
+            margin-bottom: 15px;
+        }
+        .pill-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 5px;
         }
     </style>
     {% if has_key %}
     <script>
-        // Pass to client that an API key is already stored
         window.hasApiKey = true;
     </script>
     {% else %}
@@ -51,34 +163,293 @@
 </head>
 <body>
     <div class="container">
-        <h2>Whisper Web Transcription</h2>
+        <h2>🎙️ Whisper Web Transcription <span class="pill-badge">Enhanced</span></h2>
+        
         <!-- API key input section -->
         <div id="apiKeySection">
-            <label for="apiKeyInput">Enter OpenAI API Key:</label><br>
-            <input type="password" id="apiKeyInput" placeholder="sk-..." style="width: 100%; margin-top: 5px;">
-            <button id="saveKeyBtn" style="margin-top: 5px;">Save API Key</button>
+            <label for="apiKeyInput">Enter OpenAI API Key:</label>
+            <input type="password" id="apiKeyInput" placeholder="sk-...">
+            <button id="saveKeyBtn">Save API Key</button>
         </div>
+        
         <!-- Upload and transcribe section -->
         <div id="uploadSection" class="hidden">
-            <label for="audioInput">Select audio file:</label><br>
-            <input type="file" id="audioInput" accept="audio/*" style="margin-top: 5px;"><br>
-            <label for="languageInput" style="margin-top: 10px; display:block;">Language (optional):</label>
-            <input type="text" id="languageInput" placeholder="e.g. en, de, fr" style="width: 100%; margin-top: 5px;"><br>
+            <div class="option-group">
+                <label for="audioInput">Select audio file:</label>
+                <input type="file" id="audioInput" accept="audio/*,video/*">
+            </div>
+            
+            <!-- Speaker Identification Section -->
+            <div class="speaker-section">
+                <div class="speaker-header">
+                    <input type="checkbox" id="enableSpeakers">
+                    <label for="enableSpeakers" style="margin: 0;">
+                        <strong>🗣️ Enable Speaker Identification</strong>
+                    </label>
+                </div>
+                
+                <div id="speakerSettings" class="speaker-settings hidden">
+                    <div class="info-box">
+                        <strong>How it works:</strong> The AI will attempt to identify different speakers in your audio 
+                        and label them in the transcript. Works best when speakers introduce themselves by name.
+                    </div>
+                    
+                    <label for="speakerNames">
+                        Speaker Names (optional):
+                        <br><small>Enter comma-separated names if known (e.g., "John Smith, Sarah Johnson")</small>
+                    </label>
+                    <input type="text" id="speakerNames" placeholder="Alice, Bob, Charlie">
+                    
+                    <label for="numSpeakers">
+                        Expected Number of Speakers (optional):
+                        <br><small>Helps the AI better distinguish between voices</small>
+                    </label>
+                    <input type="number" id="numSpeakers" min="2" max="10" placeholder="Leave blank for auto-detect">
+                </div>
+            </div>
+            
+            <!-- Advanced Options -->
+            <div class="advanced-options">
+                <div class="option-group">
+                    <label for="languageInput">
+                        Language Code (optional):
+                        <br><small>ISO 639-1 code (e.g., en, es, fr, de, zh)</small>
+                    </label>
+                    <input type="text" id="languageInput" placeholder="en">
+                </div>
+                
+                <div class="option-group">
+                    <label for="promptInput">
+                        Context / Custom Prompt (optional):
+                        <br><small>Add context about the audio content, technical terms, acronyms, etc.</small>
+                    </label>
+                    <textarea id="promptInput" rows="3" 
+                        placeholder="Example: This is a medical consultation discussing diabetes treatment. Terms may include: HbA1c, insulin, metformin..."></textarea>
+                </div>
+            </div>
 
-            <!-- Prompt input: ask the user for context or expected vocabulary.  This
-                 text is passed to the API to help correct acronyms, names,
-                 preserve context across chunks, and control style as suggested
-                 by OpenAI's prompting guidelines【68619459314222†screenshot】. -->
-            <label for="promptInput" style="margin-top: 10px; display:block;">Optional context / prompt:</label>
-            <textarea id="promptInput" rows="3" placeholder="Describe the audio, list acronyms, names, or topics…" style="margin-top: 5px;"></textarea><br>
-
-            <button id="transcribeBtn" style="margin-top: 10px;">Transcribe</button>
+            <button id="transcribeBtn">
+                <span id="btnText">🚀 Transcribe Audio</span>
+            </button>
+            
             <div id="progressBar" class="hidden"><div></div></div>
-            <p id="status" style="margin-top: 5px;"></p>
-            <textarea id="transcriptOutput" rows="12" placeholder="Transcribed text will appear here..." readonly style="margin-top: 10px;"></textarea><br>
-            <button id="downloadBtn" class="hidden" style="margin-top: 5px;">Download Transcript</button>
+            <p id="status"></p>
+            
+            <div id="resultSection" class="hidden">
+                <label for="transcriptOutput">
+                    <strong>Transcript:</strong>
+                    <button id="downloadBtn" style="float: right; padding: 5px 15px; margin: 0;">
+                        📥 Download
+                    </button>
+                </label>
+                <textarea id="transcriptOutput" rows="15" readonly 
+                    placeholder="Transcribed text will appear here..."></textarea>
+            </div>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const apiKeySection = document.getElementById('apiKeySection');
+            const uploadSection = document.getElementById('uploadSection');
+            const saveKeyBtn = document.getElementById('saveKeyBtn');
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const audioInput = document.getElementById('audioInput');
+            const transcribeBtn = document.getElementById('transcribeBtn');
+            const languageInput = document.getElementById('languageInput');
+            const promptInput = document.getElementById('promptInput');
+            const statusP = document.getElementById('status');
+            const progressBar = document.getElementById('progressBar');
+            const progressBarInner = progressBar.querySelector('div');
+            const transcriptOutput = document.getElementById('transcriptOutput');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resultSection = document.getElementById('resultSection');
+            
+            // Speaker-related elements
+            const enableSpeakers = document.getElementById('enableSpeakers');
+            const speakerSettings = document.getElementById('speakerSettings');
+            const speakerNames = document.getElementById('speakerNames');
+            const numSpeakers = document.getElementById('numSpeakers');
+
+            // Show/hide sections based on API key
+            if (window.hasApiKey) {
+                apiKeySection.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+            }
+
+            // Toggle speaker settings
+            enableSpeakers.addEventListener('change', function() {
+                if (this.checked) {
+                    speakerSettings.classList.remove('hidden');
+                } else {
+                    speakerSettings.classList.add('hidden');
+                }
+            });
+
+            // Save API key
+            saveKeyBtn.addEventListener('click', function () {
+                const key = apiKeyInput.value.trim();
+                if (!key) {
+                    alert('Please enter a valid API key.');
+                    return;
+                }
+                fetch('/set_api_key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: key })
+                })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data.status) {
+                            apiKeySection.classList.add('hidden');
+                            uploadSection.classList.remove('hidden');
+                        } else {
+                            alert(data.error || 'Failed to save API key.');
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        alert('Error saving API key.');
+                    });
+            });
+
+            // Transcribe audio
+            transcribeBtn.addEventListener('click', function () {
+                const file = audioInput.files[0];
+                if (!file) {
+                    alert('Please select an audio file to transcribe.');
+                    return;
+                }
+                
+                const language = languageInput.value.trim();
+                const prompt = promptInput.value.trim();
+                const formData = new FormData();
+                formData.append('audio', file);
+                
+                if (language) {
+                    formData.append('language', language);
+                }
+                if (prompt) {
+                    formData.append('prompt', prompt);
+                }
+                
+                // Add speaker-related data
+                formData.append('enable_speakers', enableSpeakers.checked);
+                if (enableSpeakers.checked) {
+                    if (speakerNames.value.trim()) {
+                        formData.append('speaker_names', speakerNames.value.trim());
+                    }
+                    // Note: numSpeakers is collected but not used in the basic implementation
+                }
+
+                // Reset UI
+                progressBar.classList.remove('hidden');
+                progressBarInner.style.width = '0%';
+                statusP.textContent = 'Uploading…';
+                statusP.className = 'status-processing';
+                transcriptOutput.value = '';
+                resultSection.classList.add('hidden');
+                transcribeBtn.disabled = true;
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/transcribe', true);
+                
+                // Track upload progress
+                if (xhr.upload) {
+                    xhr.upload.onprogress = function (event) {
+                        if (event.lengthComputable) {
+                            const percentComplete = (event.loaded / event.total) * 100;
+                            progressBarInner.style.width = percentComplete.toFixed(0) + '%';
+                        }
+                    };
+                }
+                
+                // Processing animation
+                let dots = 0;
+                let processingInterval;
+                xhr.upload.onloadend = function () {
+                    progressBarInner.style.width = '100%';
+                    statusP.textContent = 'Processing…';
+                    dots = 0;
+                    processingInterval = setInterval(() => {
+                        dots = (dots + 1) % 4;
+                        const dotsText = '.'.repeat(dots);
+                        const spacesText = '\u00A0'.repeat(3 - dots); // non-breaking spaces
+                        statusP.textContent = 'Processing' + dotsText + spacesText;
+                        
+                        if (enableSpeakers.checked) {
+                            statusP.textContent += ' (with speaker detection)';
+                        }
+                    }, 500);
+                };
+                
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        progressBarInner.style.width = '100%';
+                        transcribeBtn.disabled = false;
+                        
+                        if (processingInterval) {
+                            clearInterval(processingInterval);
+                        }
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (xhr.status === 200) {
+                                transcriptOutput.value = response.transcript || '';
+                                statusP.textContent = '✅ Transcription complete!';
+                                statusP.className = 'status-complete';
+                                
+                                if (response.transcript) {
+                                    resultSection.classList.remove('hidden');
+                                    
+                                    // Highlight speaker labels if present
+                                    if (enableSpeakers.checked && response.transcript.includes('[')) {
+                                        const labelCount = (response.transcript.match(/\[([^\]]+)\]:/g) || []).length;
+                                        if (labelCount > 0) {
+                                            statusP.textContent += ` Found ${labelCount} speaker segments.`;
+                                        }
+                                    }
+                                }
+                            } else {
+                                statusP.textContent = '❌ Error: ' + (response.error || 'Transcription failed.');
+                                statusP.className = 'status-error';
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            statusP.textContent = '❌ Error: Failed to parse server response.';
+                            statusP.className = 'status-error';
+                        }
+                    }
+                };
+                xhr.send(formData);
+            });
+
+            // Download transcript
+            downloadBtn.addEventListener('click', function () {
+                const transcript = transcriptOutput.value;
+                if (!transcript) {
+                    alert('No transcript to download.');
+                    return;
+                }
+                
+                const blob = new Blob([transcript], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Generate filename with timestamp
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+                const suffix = enableSpeakers.checked ? '_with_speakers' : '';
+                a.download = `transcript_${timestamp}${suffix}.txt`;
+                
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            });
+        });
+    </script>
 </body>
 </html>

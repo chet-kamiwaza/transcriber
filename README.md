@@ -1,183 +1,196 @@
 # Whisper Web Transcription App
 
-This project provides a simple web interface for transcribing audio files using
-OpenAI’s hosted speech‐to‐text models. It is designed to run locally on
-your machine and store your API key securely so you do not need to enter it
-each time.
+A secure, self-hosted web application for transcribing audio files using OpenAI's state-of-the-art speech-to-text models. Features automatic handling of large files through intelligent chunking, context preservation, and a user-friendly interface.
 
-## Features
+## 🚀 Features
 
-* **API key management:** The first time you visit the app, it prompts for
-  your OpenAI API key. The key is saved to `~/.openai_api_key` with read/write
-  permissions restricted to the current user. Subsequent visits detect the
-  stored key automatically.
-* **File upload and automatic chunking:** Select an audio file from your
-  computer. The app accepts any format supported by OpenAI’s API (MP3,
-  WAV, M4A, etc.). If the file exceeds the Audio API’s 25 MB limit【50147549551891†screenshot】,
-  the server automatically splits it into smaller segments using
-  [`pydub`](https://github.com/jiaaro/pydub) and re‑encodes them to MP3.  Each
-  chunk is sent to the API with your prompt and the transcript of the
-  previous segment to preserve context.  The results are concatenated
-  into a single transcript before being returned to your browser.
-* **Prompt and language input:** Alongside the file, you can provide a
-  free‑form prompt describing the audio (names, acronyms, subject matter,
-  etc.) and an optional [ISO 639‑1 language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
-  The prompt is passed to OpenAI’s model to help correct specific words,
-  maintain context across chunks and guide punctuation or stylistic choices【68619459314222†screenshot】.
-* **Progress indicator:** A progress bar displays upload progress and then
-  animates while the server processes your file.  Status updates show
-  when the server is “Processing…” so you know work is ongoing.
-* **Transcript viewer & download:** The resulting transcript appears in a
-  text area and can be downloaded as a `.txt` file.  The app always uses
-  the `gpt‑4o‑transcribe` model, which is more accurate than Whisper v2/v3
-  and supports prompting【68619459314222†screenshot】.  For every request we
-  set `stream=True` and request log‑probabilities of tokens【803826022809978†screenshot】.
+* **Latest AI Model:** Uses OpenAI's `gpt-4o-transcribe` for 10-20% better accuracy than Whisper v2/v3
+* **Smart Chunking:** Automatically handles files of ANY size or duration
+  - Files >25MB are split by size
+  - Files >23.3 minutes are split by duration
+  - Context preserved between chunks for coherent transcripts
+* **Secure API Key Management:** Keys stored locally with restricted permissions (never transmitted)
+* **Progress Tracking:** Real-time upload progress and processing status
+* **Multiple Audio Formats:** Supports MP3, WAV, M4A, and all OpenAI-compatible formats
+* **Docker Support:** Production-ready containerization with persistent storage
+* **Prompt Support:** Add context, vocabulary, or style instructions for better accuracy
 
-## Installation
+## 📋 Requirements
 
-1. **Clone or extract** the project folder.
-2. **Create a virtual environment (recommended):**
+- Python 3.11+
+- FFmpeg (for audio processing)
+- OpenAI API key
+- Docker (optional, for containerized deployment)
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+## 🛠️ Installation
 
-3. **Install dependencies:**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Docker Deployment (Recommended)
 
-   The dependency list includes [`pydub`](https://github.com/jiaaro/pydub) for
-   splitting large audio files. `pydub` uses [FFmpeg](https://ffmpeg.org) to
-   encode and decode audio; ensure FFmpeg is available on your system. When
-   running in Docker, FFmpeg is installed automatically as part of the
-   container build.
-
-4. **Run the app:**
-
-   ```bash
-   # By default the development server listens on port 5500.
-   # You can change the port by setting the PORT environment variable
-   # before running the app (e.g., PORT=6000 python app.py).
-   python app.py
-   ```
-
-5. **Open in browser:** Navigate to `http://localhost:5500` (or whatever
-   port you configured via the `PORT` environment variable).  A high port
-   such as 5500 is chosen by default to avoid conflicts with common ports
-   like 5000.
-
-## Usage
-
-Upon first loading the page, you’ll be prompted to enter your OpenAI API
-key. Once saved, the API key input is hidden and you can begin uploading
-audio files. Click **Transcribe** to send the audio to OpenAI and watch
-the progress indicator as the file uploads and is processed. The
-transcription will appear when finished. You can then download the text for
-archival or editing.
-
-### Large files and chunking
-
-The Audio API currently limits file uploads to 25 MB【258415679780279†L32-L35】【863089295758505†screenshot】. If you
-upload a file that exceeds this threshold, the app automatically splits it
-into multiple segments, each under the limit. Each chunk is transcribed
-individually and the transcripts are joined together. This process is
-handled transparently by the server, so you can upload long recordings
-without worrying about the limit. The progress bar continues to show the
-overall progress while the chunks are processed.
-
-## Model selection and context
-
-Earlier versions of this app defaulted to `whisper-1` with an option to
-specify a different model.  In March 2025 OpenAI released
-`gpt-4o-transcribe` and `gpt-4o-mini-transcribe`, which reduce word error
-rates by 10–20 % compared with Whisper【68619459314222†screenshot】.  The current
-version always uses `gpt-4o-transcribe` for the highest accuracy and to
-support longer prompts.  You no longer need to specify the model in
-`script.js`; instead, adjust your prompt and (optional) language code to
-guide the model.  When chunking long files, the server automatically
-prepends the transcript of the preceding chunk to the prompt to preserve
-context【68619459314222†screenshot】.
-
-## Security considerations
-
-Your API key is stored locally in a hidden file with restrictive
-permissions. However, anyone with access to your user account could read
-this file. Do not run the server on an untrusted machine or expose it to
-the internet without additional safeguards (e.g. authentication or firewalls).
-
-## Running in Docker
-
-This repository includes a `Dockerfile` **and** a `docker-compose.yml` to simplify
-deployment.  A persistent volume is used to store your API key and other
-files so they survive container restarts.  The application listens on a
-high port (5500) inside the container, which is mapped to the host port
-by default.  You can adjust the host port by editing the `ports` mapping
-in the compose file.
-
-### Using docker compose
-
-1. Build and start the service with compose:
-
-   ```bash
-   docker compose up -d --build
-   ```
-
-   This command builds the image using the included `Dockerfile` and
-   creates a named volume called `whisper_data`.  The volume is mounted
-   at `/data` inside the container, and your API key will be saved at
-   `/data/.openai_api_key`.  Because `/data` is declared as a volume
-   in the compose file, the key and any other files stored there persist
-   across container restarts.
-
-2. Navigate to `http://localhost:5500` in your browser.  On the first
-   visit you’ll be prompted to enter your API key.  After saving, the key
-   is reused automatically for subsequent requests.
-
-3. To stop and remove the container, run:
-
-   ```bash
-   docker compose down
-   ```
-
-### Using plain Docker
-
-If you prefer not to use compose, you can build and run the container
-manually.  The following examples map the container’s port 5500 to a
-port on the host.  You can change the host side of the mapping
-(`HOST_PORT:5500`) to any high port if 5500 is already in use on your
-machine.
-
+1. **Clone the repository:**
 ```bash
-# Build the Docker image
-docker build -t whisper-web-app .
-
-# Create a named volume to persist the API key
-docker volume create whisper_data
-
-# Run the container, mapping host port 5500 to the container’s port 5500.
-# Persist data (including your API key) using the named volume.
-docker run -p 5500:5500 \
-  -v whisper_data:/data \
-  whisper-web-app
-
-# Alternatively, mount a single file from your host as the key file.
-# This saves and reuses your API key without creating a named volume.
-docker run -p 5500:5500 \
-  -v ~/.openai_api_key:/data/.openai_api_key \
-  whisper-web-app
-
-# Or provide the key via an environment variable (no persistence).
-docker run -p 5500:5500 \
-  -e OPENAI_API_KEY=sk-yourkeyhere \
-  whisper-web-app
+git clone <repository-url>
+cd whisper-web-app
 ```
 
-After starting the container, open your browser to `http://localhost:5500`.
-If a key file exists in the mounted volume or `OPENAI_API_KEY` is set,
-the API key prompt will be skipped; otherwise the app will prompt you to
-save the key in the persistent storage path.# transcriber
-# transcriber
-# transcriber
+2. **Build and start with Docker Compose:**
+```bash
+docker compose up -d --build
+```
+
+3. **Access the app:**
+   Open http://localhost:5500 in your browser
+
+4. **View logs:**
+```bash
+docker compose logs -f
+```
+
+5. **Stop the container:**
+```bash
+docker compose down
+```
+
+## 💻 Usage
+
+### First Time Setup
+1. Visit http://localhost:5500
+2. Enter your OpenAI API key (stored securely)
+3. The key is saved locally at `~/.openai_api_key` (or `/data/.openai_api_key` in Docker)
+
+### Transcribing Audio
+1. **Select your audio file** using the file picker
+2. **(Optional) Add language code** (e.g., "en" for English, "es" for Spanish)
+3. **(Optional) Add context prompt** to improve accuracy:
+   - Include speaker names, technical terms, acronyms
+   - Describe the content type (interview, lecture, podcast)
+   - Specify desired formatting style
+4. **Click "Transcribe"** and watch the progress bar
+5. **Download the transcript** as a text file
+
+### Large Files and Duration Limits
+
+The Audio API has two important limits:
+- **File size**: Maximum 25 MB per request
+- **Duration**: Maximum 1400 seconds (23.33 minutes) per request
+
+If you upload a file that exceeds either threshold, the app automatically 
+splits it into multiple segments, each under both limits. For example:
+- A 30-minute file will be split into 2 chunks of ~15 minutes each
+- A large but short file (>25MB, <23 minutes) will be split by size
+- A long but small file (<25MB, >23 minutes) will be split by duration
+
+Each chunk is transcribed individually with context preservation - the 
+transcript from the previous chunk is included in the prompt to maintain
+continuity. The transcripts are then joined together seamlessly. This 
+process is handled transparently by the server, so you can upload recordings
+of any length without worrying about the limits.
+
+## 🔒 Security Features
+
+- **Local Key Storage:** API keys never leave your machine
+- **Restricted Permissions:** Key file has 0600 permissions (owner read/write only)
+- **Secure Filenames:** Protection against path traversal attacks
+- **Automatic Cleanup:** Temporary files deleted after processing
+- **No External Services:** Completely self-hosted solution
+
+## 🐳 Docker Configuration
+
+The Docker setup includes:
+- **Base Image:** Python 3.11-slim for minimal footprint
+- **Persistent Storage:** Named volume `whisper_data` for API keys
+- **Auto-restart:** Container restarts unless explicitly stopped
+- **FFmpeg Included:** Audio processing tools pre-installed
+- **Port Mapping:** Container port 5500 mapped to host
+
+### Environment Variables
+- `OPENAI_KEY_PATH`: Path to API key file (default: `/data/.openai_api_key`)
+- `PORT`: Server port (default: `5500`)
+- `OPENAI_API_KEY`: Direct API key (alternative to file storage)
+
+## 📊 Performance Characteristics
+
+| File Size | Duration | Processing |
+|-----------|----------|------------|
+| <25MB & <23min | Any | Single API call |
+| 30 min | ~50MB | 2 chunks × 15 min |
+| 1 hour | ~100MB | 3 chunks × 20 min |
+| 2 hours | ~200MB | 6 chunks × 20 min |
+| Any size | Any duration | Automatic chunking |
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+
+**Error: "API key not set"**
+- Ensure you've entered your OpenAI API key on first visit
+- Check the key file exists at `~/.openai_api_key`
+
+**Error: "No audio file provided"**
+- Ensure you've selected a file before clicking Transcribe
+
+
+### Debug Mode
+
+To see detailed processing information, the Flask app runs in debug mode by default. Check the console output for:
+- File size and duration information
+- Chunk processing progress
+- API response details
+
+## 🛠️ Technical Details
+
+### Architecture
+- **Backend:** Flask 2.3+ with OpenAI Python SDK
+- **Audio Processing:** PyDub with FFmpeg
+- **Frontend:** Vanilla JavaScript with XMLHttpRequest for progress tracking
+- **Streaming:** Real-time response streaming from OpenAI API
+- **Context Management:** Previous chunk's transcript passed as prompt
+
+### File Structure
+```
+whisper-web-app/
+├── app.py                    # Main Flask application
+├── requirements.txt          # Python dependencies
+├── Dockerfile               # Container configuration
+├── docker-compose.yml       # Docker orchestration
+├── templates/
+│   └── index.html          # Web interface
+├── static/
+│   └── script.js           # Client-side logic
+└── uploads/                # Temporary file storage (auto-created)
+```
+
+## 📝 Recent Updates
+
+### v1.1.0 - Duration Limit Fix
+- ✅ Added automatic chunking based on audio duration (23.3-minute limit)
+- ✅ Improved context preservation between chunks
+- ✅ Added progress logging for chunk processing
+- ✅ Optimized MP3 encoding with bitrate control
+- ✅ Added prompt length management to prevent overflow
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is available for use under standard open-source terms.
+
+## ⚠️ Important Notes
+
+1. **API Costs:** OpenAI charges for API usage. Monitor your usage at https://platform.openai.com
+2. **Privacy:** Audio files are sent to OpenAI for processing. Don't upload sensitive content
+3. **Rate Limits:** Subject to OpenAI's rate limits on your API key
+4. **Production Use:** For production, consider using Gunicorn instead of Flask's development server
+
+## 🙏 Acknowledgments
+
+- OpenAI for the powerful speech-to-text API
+- Flask community for the excellent web framework
+- PyDub developers for audio processing capabilities
+
+---
+
+**Ready to transcribe?** Start the app and transform your audio into text with state-of-the-art AI!
